@@ -45,7 +45,7 @@ class EmbeddingService:
         logger.debug(
             f"EmbeddingService.model accessed "    
             f"(access count={self._model_access_count}), "
-            f"model_loaded={self._model is not None})"
+            f"model_loaded={self._model is not None}"
         )
         
         """Lazy-load embedding model to avoid loading during import"""
