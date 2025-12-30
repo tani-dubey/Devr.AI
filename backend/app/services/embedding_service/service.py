@@ -4,7 +4,12 @@ from typing import List, Dict, Any, Optional
 import torch
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
-from langchain_google_genai import ChatGoogleGenerativeAI
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+
+# from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from app.core.config import settings
 from app.models.database.weaviate import WeaviateUserProfile
@@ -51,7 +56,7 @@ class EmbeddingService:
         return self._model
 
     @property
-    def llm(self) -> ChatGoogleGenerativeAI:
+    def llm(self) -> "ChatGoogleGenerativeAI":
         """Lazy-load LLM for profile summarization"""
         if self._llm is None:
             try:

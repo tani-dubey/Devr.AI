@@ -6,19 +6,25 @@ from typing import Optional
 load_dotenv()
 
 class Settings(BaseSettings):
+    ## CORE (minimal code)
+    backend_url: str =""
+    
+    ## OPTIONAL
+    
     # Gemini LLM API Key
-    gemini_api_key: str = ""
+    gemini_api_key: Optional[str] = None
 
     # Tavily API Key
-    tavily_api_key: str = ""
+    tavily_api_key: Optional[str] = None
 
     # Platforms
-    github_token: str = ""
-    discord_bot_token: str = ""
+    github_token: Optional[str] = None
+    discord_bot_token: Optional[str] = None
 
     # DB configuration
-    supabase_url: str
-    supabase_key: str
+    supabase_url: Optional[str] = None
+    supabase_key: Optional[str] = None
+
 
     # LangSmith Tracing
     langsmith_tracing: bool = False
@@ -36,18 +42,16 @@ class Settings(BaseSettings):
     # RabbitMQ configuration
     rabbitmq_url: Optional[str] = None
 
-    # Backend URL
-    backend_url: str = ""
-
     # Onboarding UX toggles
     onboarding_show_oauth_button: bool = True
 
-    @field_validator("supabase_url", "supabase_key", mode="before")
-    @classmethod
-    def _not_empty(cls, v, field):
-        if not v:
-            raise ValueError(f"{field.name} must be set")
-        return v
+    def require_supabase():
+        if not settings.supabase_url or not settings.supabase_key:
+            raise RuntimeError(
+                "Supabase is not configured. "
+                "This feature is unavailable in minimal local mode."
+            )
+
 
     model_config = ConfigDict(
         env_file=".env",

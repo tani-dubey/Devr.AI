@@ -91,6 +91,7 @@ async def auth_callback(
 
         # Optional: DM the user that they're all set with final hand-off message
         try:
+            import discord 
             bot = app_instance.discord_bot if app_instance else None
             if bot and getattr(verified_user, "discord_id", None):
                 discord_user = await bot.fetch_user(int(verified_user.discord_id))
