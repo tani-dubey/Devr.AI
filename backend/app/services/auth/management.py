@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime
 from typing import Optional
-from app.database.supabase.client import get_supabase_client
 from app.models.database.supabase import User
 import logging
 
@@ -13,6 +12,16 @@ async def get_or_create_user_by_discord(
     """
     Get or create a user by Discord ID.
     """
+    # 🔒 Guard FIRST
+    if not settings.supabase_url or not settings.supabase_key:
+        logger.warning(
+            "get_or_create_user_by_discord called but Supabase is not configured"
+        )
+        raise RuntimeError(
+            "Supabase is not configured. User management is unavailable."
+        )
+
+    from app.database.supabase.client import get_supabase_client
     supabase = get_supabase_client()
     existing_user_res = await supabase.table("users").select("*").eq("discord_id", discord_id).limit(1).execute()
 

@@ -1,4 +1,4 @@
-# import discord
+import discord
 
 from app.agents.devrel.onboarding.messages import (
     CAPABILITIES_INTRO_TEXT,

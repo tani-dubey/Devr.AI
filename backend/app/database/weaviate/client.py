@@ -30,3 +30,4 @@ async def get_weaviate_client() -> AsyncGenerator[weaviate.WeaviateClient, None]
             await client.close()
         except Exception as e:
             logger.warning(f"Error closing Weaviate client: {str(e)}")
+            

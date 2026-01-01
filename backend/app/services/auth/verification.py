@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Tuple
-from app.database.supabase.client import get_supabase_client
+from app.core.config import settings
 from app.models.database.supabase import User
 import logging
 
@@ -16,24 +16,34 @@ def _cleanup_expired_sessions():
     """
     Remove expired verification sessions.
     """
-    current_time = datetime.now()
-    expired_sessions = [
-        session_id for session_id, (discord_id, expiry_time) in _verification_sessions.items()
-        if current_time > expiry_time
-    ]
+    if settings.supabase_key and settings.supabase_url:
+        from app.database.supabase.client import get_supabase_client
+        current_time = datetime.now()
+        expired_sessions = [
+            session_id for session_id, (discord_id, expiry_time) in _verification_sessions.items()
+            if current_time > expiry_time
+        ]
 
-    for session_id in expired_sessions:
-        discord_id, _ = _verification_sessions[session_id]
-        del _verification_sessions[session_id]
-        logger.info(f"Cleaned up expired verification session {session_id} for Discord user {discord_id}")
+        for session_id in expired_sessions:
+            discord_id, _ = _verification_sessions[session_id]
+            del _verification_sessions[session_id]
+            logger.info(f"Cleaned up expired verification session {session_id} for Discord user {discord_id}")
 
-    if expired_sessions:
-        logger.info(f"Cleaned up {len(expired_sessions)} expired verification sessions")
+        if expired_sessions:
+            logger.info(f"Cleaned up {len(expired_sessions)} expired verification sessions")
+    else:
+        return 
 
 async def create_verification_session(discord_id: str) -> Optional[str]:
     """
     Create a verification session with expiry and return session ID.
     """
+    if not settings.supabase_key or not settings.supabase_url:
+        logger.warning(
+            "Supabase is not configured; GitHub verification is disabled "
+            "(SUPABASE_URL / SUPABASE_KEY missing)"
+        )
+        raise RuntimeError("supabase_not_configured")
     supabase = get_supabase_client()
 
     _cleanup_expired_sessions()
@@ -138,6 +148,10 @@ async def cleanup_expired_tokens():
     """
     Clean up expired verification tokens from database.
     """
+    if not settings.supabase_key or not settings.supabase_url:
+        logger.info("Skipping token cleanup (Supabase not configured)")
+        return
+
     supabase = get_supabase_client()
     current_time = datetime.now().isoformat()
 

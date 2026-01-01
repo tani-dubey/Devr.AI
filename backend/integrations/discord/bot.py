@@ -48,7 +48,8 @@ class DiscordBot(commands.Bot):
         if message.author == self.user:
             return
 
-        if message.interaction_metadata is not None:
+        # if message.interaction_metadata is not None:
+        if message.interaction is not None:
             return
 
         try:

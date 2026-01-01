@@ -42,7 +42,7 @@ class DevRAIApplication:
             from integrations.discord.bot import DiscordBot
             from discord.ext import commands
             self.discord_bot= DiscordBot(self.queue_manager)
-    
+
     async def start_background_tasks(self):
         logger.info("Starting background tasks...")
 
@@ -73,7 +73,7 @@ class DevRAIApplication:
                     )
                     logger.info("Discord bot started")
                 except Exception as e:
-                    logger.warning("Discord startup failed: %s", e)
+                    logger.exception("Discord startup failed")
                     self.discord_bot = None
             else:
                 logger.info("Discord disabled (no token)")
@@ -85,7 +85,7 @@ class DevRAIApplication:
             await self.stop_background_tasks()
             raise
 
-            
+
 
     async def test_weaviate_connection(self):
         """Test Weaviate connection during startup."""
@@ -182,23 +182,23 @@ if __name__ == "__main__":
 
     if missing_vars:
         raise RuntimeError(f"Core backend misconfigured. Missing: {','.join(missing_vars)} ")
-    
+
     # Optional features
     feature_status={}
     for feature, vars in optional_vars.items():
         enabled= all(getattr(settings, var.lower(),None) for var in vars
         )
         feature_status[feature]=enabled
-    
+
         if not enabled:
            logger.warning(f" {feature.capitalize()} disable - running on minimal local mode"
          )
     app_instance.feature_status = feature_status
-    
+
     # for nice DX 
     enabled = [f for f, ok in feature_status.items() if ok]
     logger.info(f"Enabled integrations: {', '.join(enabled) or 'none'}")
-    
+
 
     uvicorn.run(
         "__main__:api",

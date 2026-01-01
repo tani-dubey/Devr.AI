@@ -1,5 +1,4 @@
 from typing import Optional
-from app.database.supabase.client import get_supabase_client
 import logging
 
 logger = logging.getLogger(__name__)
@@ -8,6 +7,11 @@ async def login_with_oauth(provider: str, redirect_to: Optional[str] = None, sta
     """
     Generates an asynchronous OAuth sign-in URL.
     """
+    # 🔒 Capability guard
+    if not settings.supabase_url or not settings.supabase_key:
+        raise RuntimeError("Supabase not configured")
+
+    from app.database.supabase.client import get_supabase_client
     supabase = get_supabase_client()
     try:
         options = {}
