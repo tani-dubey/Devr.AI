@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional
 from app.models.database.supabase import User
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 

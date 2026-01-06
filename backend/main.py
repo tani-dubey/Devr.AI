@@ -73,7 +73,7 @@ class DevRAIApplication:
                     )
                     logger.info("Discord bot started")
                 except Exception as e:
-                    logger.exception("Discord startup failed")
+                    logger.info("Discord startup failed")
                     self.discord_bot = None
             else:
                 logger.info("Discord disabled (no token)")
