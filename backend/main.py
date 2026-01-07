@@ -7,7 +7,6 @@ import uvicorn
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-# from app.api.router import api_router
 from app.api.router import core_router
 from app.core.config import settings
 from app.core.orchestration.queue_manager import AsyncQueueManager
@@ -50,16 +49,11 @@ class DevRAIApplication:
             # 1. Start queue (mandatory)
             if settings.rabbitmq_url:
                 await self.queue_manager.start(num_workers=3)
-                logger.info("Queue manager started")
-            else:
-                logger.info("Queue manager disabled (minimal local mode)")
-
 
             # 2. Optional Weaviate
             if self.weaviate_enabled:
                 try:
                     await self.test_weaviate_connection()
-                    logger.info("Weaviate enabled")
                 except Exception as e:
                     logger.warning("Weaviate disabled: %s", e)
                     self.weaviate_enabled = False
@@ -71,17 +65,19 @@ class DevRAIApplication:
                     asyncio.create_task(
                         self.discord_bot.start(settings.discord_bot_token)
                     )
-                    logger.info("Discord bot started")
                 except Exception as e:
-                    logger.info("Discord startup failed")
+                    logger.warning("Discord startup failed: %s",e)
                     self.discord_bot = None
-            else:
-                logger.info("Discord disabled (no token)")
-
-            logger.info("Background tasks started successfully")
-
+                    
+            logger.info(
+            "Background services ready | queue=%s weaviate=%s discord=%s",
+            bool(settings.rabbitmq_url),
+            self.weaviate_enabled,
+            bool(self.discord_bot),
+            )        
+            
         except Exception as e:
-            logger.error("Startup failed: %s", e, exc_info=True)
+            logger.error(f"Error during background task startup: {e}", exc_info=True)
             await self.stop_background_tasks()
             raise
 
@@ -89,13 +85,9 @@ class DevRAIApplication:
 
     async def test_weaviate_connection(self):
         """Test Weaviate connection during startup."""
-        try:
-            async with get_weaviate_client() as client:
-                if await client.is_ready():
-                    logger.info("Weaviate connection successful and ready")
-        except Exception as e:
-            logger.error(f"Failed to connect to Weaviate: {e}")
-            raise
+        async with get_weaviate_client() as client:
+            if not await client.is_ready():
+                raise RuntimeError("Weaviate not ready")
 
     async def stop_background_tasks(self):
         """Stops all background tasks and connections gracefully."""
@@ -103,12 +95,10 @@ class DevRAIApplication:
         try:
             if self.discord_bot and not self.discord_bot.is_closed():
                 await self.discord_bot.close()
-                logger.info("Discord bot has been closed.")
         except Exception as e:
             logger.error(f"Error closing Discord bot: {e}", exc_info=True)
         try:
             await self.queue_manager.stop()
-            logger.info("Queue manager has been stopped.")
         except Exception as e:
             logger.error(f"Error stopping queue manager: {e}", exc_info=True)
         logger.info("All background tasks and connections stopped.")
@@ -149,21 +139,16 @@ async def favicon():
     """Return empty favicon to prevent 404 logs"""
     return Response(status_code=204)
 
-# api.include_router(api_router)
 # --- Core routes (always enabled) ---
 api.include_router(core_router)
-logger.info("Core API routes enabled")
 
 # --- Optional: Auth / OAuth routes ---
 if settings.supabase_key and settings.supabase_url:
     try:
         from app.api.v1.auth import router as auth_router
         api.include_router(auth_router, prefix="/auth", tags=["auth"])
-        logger.info("Auth routes enabled (Supabase detected)")
     except Exception as e:
         logger.error(f"Failed to load auth routes: {e}", exc_info=True)
-else:
-    logger.info("Auth routes disabled (minimal local mode)")
 
 
 if __name__ == "__main__":
@@ -183,22 +168,14 @@ if __name__ == "__main__":
     if missing_vars:
         raise RuntimeError(f"Core backend misconfigured. Missing: {','.join(missing_vars)} ")
 
-    # Optional features
-    feature_status={}
-    for feature, vars in optional_vars.items():
-        enabled= all(getattr(settings, var.lower(),None) for var in vars
-        )
-        feature_status[feature]=enabled
-
-        if not enabled:
-           logger.warning(f" {feature.capitalize()} disable - running on minimal local mode"
-         )
-    app_instance.feature_status = feature_status
-
-    # for nice DX 
-    enabled = [f for f, ok in feature_status.items() if ok]
-    logger.info(f"Enabled integrations: {', '.join(enabled) or 'none'}")
-
+    logger.info(
+        "Startup | supabase=%s discord=%s llm=%s search=%s github=%s",
+        bool(settings.supabase_url and settings.supabase_key),
+        bool(settings.discord_bot_token),
+        bool(settings.gemini_api_key),
+        bool(settings.tavily_api_key),
+        bool(settings.github_token),
+    )
 
     uvicorn.run(
         "__main__:api",

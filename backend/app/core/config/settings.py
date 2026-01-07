@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     # Onboarding UX toggles
     onboarding_show_oauth_button: bool = True
 
+    ## used where supabase is required feature
     def require_supabase():
         if not settings.supabase_url or not settings.supabase_key:
             raise RuntimeError(
