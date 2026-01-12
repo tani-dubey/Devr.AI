@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional
 from app.database.supabase.client import get_supabase_client
 from app.models.database.supabase import User
+from app.services.auth.verification import cleanup_expired_tokens
 import logging
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,8 @@ async def get_or_create_user_by_discord(
     Get or create a user by Discord ID.
     """
     supabase = get_supabase_client()
+   # 🔑 CLEANUP FIRST
+    await cleanup_expired_tokens()
     existing_user_res = await supabase.table("users").select("*").eq("discord_id", discord_id).limit(1).execute()
 
     if existing_user_res.data:

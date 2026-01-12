@@ -1,4 +1,5 @@
-from typing import Callable, Self
+from typing import Callable, TypeVar # only for my locals
+Self = TypeVar("Self", bound="Entity")
 from tree_sitter import Node
 
 
