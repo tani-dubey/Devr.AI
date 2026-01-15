@@ -23,7 +23,11 @@ async def get_or_create_user_by_discord(
         )
 
     from app.database.supabase.client import get_supabase_client
+    from app.services.auth.verification import cleanup_expired_tokens
+    
     supabase = get_supabase_client()
+    # 🔑 CLEANUP FIRST
+    await cleanup_expired_tokens()
     existing_user_res = await supabase.table("users").select("*").eq("discord_id", discord_id).limit(1).execute()
 
     if existing_user_res.data:

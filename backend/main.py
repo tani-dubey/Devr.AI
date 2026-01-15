@@ -146,7 +146,7 @@ api.include_router(core_router)
 if settings.supabase_key and settings.supabase_url:
     try:
         from app.api.v1.auth import router as auth_router
-        api.include_router(auth_router, prefix="/auth", tags=["auth"])
+        api.include_router(auth_router, prefix="/v1/auth", tags=["auth"])
     except Exception as e:
         logger.error(f"Failed to load auth routes: {e}", exc_info=True)
 

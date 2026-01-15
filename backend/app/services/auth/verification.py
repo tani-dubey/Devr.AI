@@ -4,6 +4,7 @@ from typing import Optional, Dict, Tuple
 from app.core.config import settings
 from app.models.database.supabase import User
 import logging
+from app.database.supabase.client import get_supabase_client
 
 logger = logging.getLogger(__name__)
 
