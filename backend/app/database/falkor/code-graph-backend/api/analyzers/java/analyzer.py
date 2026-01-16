@@ -8,8 +8,7 @@ from ..analyzer import AbstractAnalyzer
 from multilspy import SyncLanguageServer
 
 import tree_sitter_java as tsjava
-from tree_sitter import Language, Node
-from tree_sitter import QueryCursor, Query, Node
+from tree_sitter import Language, QueryCursor, Node
 
 from xml.etree import ElementTree
 
@@ -88,7 +87,7 @@ class JavaAnalyzer(AbstractAnalyzer):
                 for interface in interfaces_captures['interface']:
                     entity.add_symbol("implement_interface", interface)
             base_class_query = self.language.query("(superclass (type_identifier) @base_class)")
-            captures = self._run_query(base_class_query, entity.node)
+            base_class_captures = self._run_query(base_class_query, entity.node)
             
             if 'base_class' in base_class_captures:
                 base_class = base_class_captures['base_class'][0]

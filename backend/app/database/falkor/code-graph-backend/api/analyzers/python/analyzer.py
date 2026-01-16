@@ -9,8 +9,7 @@ from typing import Optional
 from ..analyzer import AbstractAnalyzer
 
 import tree_sitter_python as tspython
-from tree_sitter import Language, Node
-from tree_sitter import QueryCursor, Query, Node
+from tree_sitter import Language, QueryCursor, Node
 
 import logging
 logger = logging.getLogger('code_graph')
