@@ -93,7 +93,7 @@ class JavaAnalyzer(AbstractAnalyzer):
                 base_class = base_class_captures['base_class'][0]
                 entity.add_symbol("base_class", base_class)
         elif entity.node.type == 'interface_declaration':
-            extends_query = self.language.query("(extends_interfaces (type_list (type_identifier) @type))?")
+            extends_query = self.language.query("(extends_interfaces (type_list (type_identifier) @type))")
             extends_captures = self._run_query(extends_query, entity.node)
             
             if 'type' in extends_captures:
