@@ -105,11 +105,9 @@ class PythonAnalyzer(AbstractAnalyzer):
             if 'parameter' in captures:
                 for parameter in captures['parameter']:
                     entity.add_symbol("parameters", parameter)
-
             return_type = entity.node.child_by_field_name('return_type')
             if return_type:
                 entity.add_symbol("return_type", return_type)
-
 
     def is_dependency(self, file_path: str) -> bool:
         return "venv" in file_path
