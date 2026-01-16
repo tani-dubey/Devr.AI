@@ -81,7 +81,7 @@ class JavaAnalyzer(AbstractAnalyzer):
         if entity.node.type == 'class_declaration':
             interfaces_query = self.language.query("(super_interfaces (type_list (type_identifier) @interface))")
             
-            captures = self._run_query(interfaces_query, entity.node)
+            interfaces_captures = self._run_query(interfaces_query, entity.node)
             
             if 'interface' in interfaces_captures:
                 for interface in interfaces_captures['interface']:
@@ -94,7 +94,7 @@ class JavaAnalyzer(AbstractAnalyzer):
                 entity.add_symbol("base_class", base_class)
         elif entity.node.type == 'interface_declaration':
             extends_query = self.language.query("(extends_interfaces (type_list (type_identifier) @type))?")
-            captures = self._run_query(extends_query, entity.node)
+            extends_captures = self._run_query(extends_query, entity.node)
             
             if 'type' in extends_captures:
                 for interface in extends_captures['type']:
