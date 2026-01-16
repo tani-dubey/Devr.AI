@@ -140,9 +140,7 @@ class RepoService:
                             "edges": data.get("edge_count", 0)
                         }
                     else:
-                        # error_msg = (await response.text())[:500]
                         error_msg = f"Backend returned status {response.status}"
-
 
                         await self.supabase.table("indexed_repositories").update({
                             "indexing_status": "failed",
