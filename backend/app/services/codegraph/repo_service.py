@@ -57,7 +57,7 @@ class RepoService:
             # Check if already indexed
             existing = await self.supabase.table("indexed_repositories").select("*").eq(
                 "repository_full_name", repo_info['full_name']
-            ).eq("is_deleted", False).execute()
+            ).eq("is_deleted",False).execute()
 
             if existing.data:
                 repo_data = existing.data[0]
@@ -114,8 +114,16 @@ class RepoService:
                     }
                 ) as response:
                     if response.status == 200:
-                        data = await response.json() if await response.text() else {}
-
+                        raw_text= await response.text()
+                        print(f"🐯raw txt -- {raw_text}")
+                        try:
+                            import json
+                            data = json.loads(raw_text) if raw_text else {}
+                        except Exception:
+                            logger.debug("Failed to parse backend JSON")
+                            data= {}
+                        print(f"📃data -- {data}")
+                        
                         await self.supabase.table("indexed_repositories").update({
                             "indexing_status": "completed",
                             "indexed_at": datetime.now().isoformat(),
@@ -134,7 +142,9 @@ class RepoService:
                             "edges": data.get("edge_count", 0)
                         }
                     else:
-                        error_msg = (await response.text())[:500]
+                        # error_msg = (await response.text())[:500]
+                        error_msg = f"Backend returned status {response.status}"
+
 
                         await self.supabase.table("indexed_repositories").update({
                             "indexing_status": "failed",
