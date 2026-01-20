@@ -23,16 +23,26 @@ logger = logging.getLogger(__name__)
 # ============================================================
 # Gates 
 # ============================================================
+def discord_only_enabled() -> bool:
+    return bool(os.getenv("DISCORD_BOT_TOKEN"))
 
-def github_verification_enabled() -> bool:
-    """True only when GitHub + Supabase are configured."""
-    return all([
+def github_enabled() -> bool:
+    return discord_only_enabled() and all([
         settings.github_token,
         settings.supabase_url,
         settings.supabase_key,
     ])
 
+def code_intelligence_enabled() -> bool:
+    return github_enabled() and all([
+        os.getenv("FALKORDB_HOST"),
+        os.getenv("FALKORDB_PORT"),
+        os.getenv("CODEGRAPH_BACKEND_URL"),
+        os.getenv("CODEGRAPH_SECRET_TOKEN"),
+    ])
 
+
+# ---interactions----
 async def send_github_unavailable(interaction: discord.Interaction):
     embed = discord.Embed(
         title="❌ GitHub Verification Unavailable",
@@ -44,13 +54,6 @@ async def send_github_unavailable(interaction: discord.Interaction):
     )
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-def falkordb_enabled():
-    return all([
-        os.getenv("FALKORDB_HOST"),
-        os.getenv("FALKORDB_PORT"),
-        os.getenv("CODEGRAPH_BACKEND_URL"),
-        os.getenv("CODEGRAPH_SECRET_TOKEN"),
-    ])
 async def falkor_unavailable(interaction: discord.Interaction):
     embed = discord.Embed(
         title="❌ Indexing Unavailable",
@@ -102,29 +105,66 @@ class DevRelCommands(commands.Cog):
         self.bot.active_threads.pop(user_id, None)
         await interaction.response.send_message("Your DevRel thread & memory have been reset!", ephemeral=True)
 
+    # @app_commands.command(name="help", description="Show DevRel assistant help.")
+    # async def help_devrel(self, interaction: discord.Interaction):
+    #     embed = discord.Embed(
+    #         title="DevRel Assistant Help",
+    #         description="I can help you with Devr.AI related questions!",
+    #         color=discord.Color.blue()
+    #     )
+    #     embed.add_field(
+    #         name="Commands",
+    #         value=(
+    #             "• `/reset` - Reset your DevRel thread and memory\n"
+    #             "• `/help` - Show this help message\n"
+    #             "• `/verify_github` - Link your GitHub account\n"
+    #             "• `/verification_status` - Check your verification status\n"
+    #         ),
+    #         inline=False
+    #     )
     @app_commands.command(name="help", description="Show DevRel assistant help.")
     async def help_devrel(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="DevRel Assistant Help",
-            description="I can help you with Devr.AI related questions!",
+            description="Available commands on this server:",
             color=discord.Color.blue()
         )
+
         embed.add_field(
-            name="Commands",
+            name="Basic",
             value=(
                 "• `/reset` - Reset your DevRel thread and memory\n"
-                "• `/help` - Show this help message\n"
-                "• `/verify_github` - Link your GitHub account\n"
-                "• `/verification_status` - Check your verification status\n"
+                "• `/help` - Show this help message"
             ),
             inline=False
         )
+
+        if github_enabled():
+            embed.add_field(
+                name="GitHub",
+                value=(
+                    "• `/verify_github` - Link your GitHub account\n"
+                    "• `/verification_status` - Check your verification status"
+                ),
+                inline=False
+            )
+
+        if code_intelligence_enabled():
+            embed.add_field(
+                name="Code Intelligence",
+                value=(
+                    "• `/index_repository` - Index a GitHub repository\n"
+                    "• `/delete_index` - Delete an indexed repository\n"
+                    "• `/list_indexed_repos` - List your indexed repositories"
+                ),
+                inline=False
+            )
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="verification_status",
                           description="Check your GitHub verification status.")
     async def verification_status(self, interaction: discord.Interaction):
-        if not github_verification_enabled():
+        if not github_enabled():
             logger.info("Verification blocked: GitHub/Supabase not configured")
             await send_github_unavailable(interaction)
             return
@@ -157,7 +197,7 @@ class DevRelCommands(commands.Cog):
 
     @app_commands.command(name="verify_github", description="Link your GitHub account.")
     async def verify_github(self, interaction: discord.Interaction):
-        if not github_verification_enabled():
+        if not github_enabled():
             logger.info("Verification blocked: GitHub/Supabase not configured")
             await send_github_unavailable(interaction)
             return
@@ -244,7 +284,7 @@ class DevRelCommands(commands.Cog):
     @app_commands.command(name="index_repository", description="Index a GitHub repository")
     @app_commands.describe(repository="GitHub URL or owner/repo (e.g., AOSSIE-Org/Devr.AI)")
     async def index_repository(self, interaction: discord.Interaction, repository: str):
-        if not falkordb_enabled():
+        if not code_intelligence_enabled():
             logger.info("Idexing blocked: FalkorDB not configured")
             await falkor_unavailable(interaction)
             return
@@ -378,7 +418,7 @@ class DevRelCommands(commands.Cog):
     @app_commands.command(name="delete_index", description="Delete indexed repository")
     @app_commands.describe(repository="Repository name (owner/repo)")
     async def delete_index(self, interaction: discord.Interaction, repository: str):
-        if not falkordb_enabled():
+        if not code_intelligence_enabled():
             logger.info("Deletion of index blocked: FalkorDB not configured")
             await falkor_unavailable(interaction)
             return
@@ -431,7 +471,7 @@ class DevRelCommands(commands.Cog):
 
     @app_commands.command(name="list_indexed_repos", description="List your indexed repositories")
     async def list_indexed_repos(self, interaction: discord.Interaction):
-        if not falkordb_enabled():
+        if not code_intelligence_enabled():
             logger.info("list indexed repo blocked: FalkorDB not configured")
             await falkor_unavailable(interaction)
             return
@@ -531,10 +571,11 @@ class OnboardingCog(commands.Cog):
         - "dm_forbidden": cannot DM the user
         - "error": unexpected error (fallback attempted)
         """
-        if not github_verification_enabled():
+        if not github_enabled():
             logger.info("Verification blocked: GitHub/Supabase not configured")
-            await send_github_unavailable(interaction)
-            return
+            await send_github_unavailable_dm(user)
+            return "auth_unavailable"
+
         try:
             from app.services.auth.verification import create_verification_session
             from app.services.auth.supabase import login_with_github
