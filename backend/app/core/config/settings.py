@@ -44,19 +44,6 @@ class Settings(BaseSettings):
 
     # Onboarding UX toggles
     onboarding_show_oauth_button: bool = True
-
-    # @field_validator("supabase_url", "supabase_key", mode="before")
-    # @classmethod
-    # def _not_empty(cls, v, field):
-    #     if not v:
-    #         raise ValueError(f"{field.name} must be set")
-    #     return v
-
-    # model_config = ConfigDict(
-    #     env_file=".env",
-    #     extra="ignore"
-    # )  # to prevent errors from extra env variables
-
     # ------------------
     # Derived feature gates
     # ------------------
