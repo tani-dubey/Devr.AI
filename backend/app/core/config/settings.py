@@ -65,14 +65,6 @@ class Settings(BaseSettings):
     def discord_enabled(self) -> bool:
         return bool(self.discord_bot_token) and bool(self.gemini_api_key)
 
-    # @property
-    # def llm_enabled(self) -> bool:
-    #     """
-    #     Gemini reasoning/chat for Discord.
-    #     Explicitly tied to Discord + Gemini key.
-    #     """
-    #     return self.discord_enabled and bool(self.gemini_api_key)
-
     @property
     def github_enabled(self) -> bool:
         """
