@@ -79,14 +79,37 @@ class DiscordBot(commands.Bot):
 
         except Exception as e:
             logger.error(f"Error processing message: {str(e)}")
+    
+    async def _handle_basic_discord_chat(self, message):
+        """
+        Stateless Discord-only reply.
+        No classification, no memory, no queue, no agent.
+        """
+        try:
+            from app.llm.chat import chat_completion  # your LLM wrapper
 
+            reply = await chat_completion(
+                message.content,
+                context={
+                    "platform": "discord",
+                    "mode": "discord_only",
+                    "user_id": str(message.author.id),
+                },
+            )
+
+            await message.channel.send(reply)
+
+        except Exception as e:
+            logger.exception("Basic Discord-only chat failed")
+            await message.channel.send(
+                "Sorry — I had trouble answering that just now."
+            )
+
+    
     async def _handle_devrel_message(self, message, triage_result: Dict[str, Any]):
         """This now handles both new requests and follow-ups in threads."""
         if not self.queue_manager:
-            await message.channel.send(
-                "⚠️ Advanced processing is currently disabled. "
-                "I can still help with basic questions!"
-            )
+            await self._handle_basic_discord_chat(message)
             return
         
         try:
