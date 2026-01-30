@@ -173,13 +173,13 @@ class DevRelCommands(commands.Cog):
             )
             if user_profile.is_verified and user_profile.github_id:
                 embed = discord.Embed(title="✅ Verification Status",
-                                      color=discord.Color.green())
+                                        color=discord.Color.green())
                 embed.add_field(name="GitHub Account", value=f"`{user_profile.github_username}`", inline=True)
                 embed.add_field(name="Status", value="✅ Verified", inline=True)
             else:
                 embed = discord.Embed(title="❌ Verification Status",
-                                      description="Your GitHub account is not linked.",
-                                      color=discord.Color.red())
+                                        description="Your GitHub account is not linked.",
+                                        color=discord.Color.red())
                 embed.add_field(name="Next Steps",
                                 value="Use `/verify_github` to link your GitHub account.",
                                 inline=False)

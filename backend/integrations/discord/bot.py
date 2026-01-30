@@ -80,42 +80,46 @@ class DiscordBot(commands.Bot):
         except Exception as e:
             logger.error(f"Error processing message: {str(e)}")
     
-    async def _handle_basic_discord_chat(self, message):
-        """
-        Stateless Discord-only reply.
-        No classification, no memory, no queue, no agent.
-        """
-        try:
-            from app.llm.chat import chat_completion  # your LLM wrapper
-
-            reply = await chat_completion(
-                message.content,
-                context={
-                    "platform": "discord",
-                    "mode": "discord_only",
-                    "user_id": str(message.author.id),
-                },
-            )
-
-            await message.channel.send(reply)
-
-        except Exception as e:
-            logger.exception("Basic Discord-only chat failed")
-            await message.channel.send(
-                "Sorry — I had trouble answering that just now."
-            )
-
-    
     async def _handle_devrel_message(self, message, triage_result: Dict[str, Any]):
         """This now handles both new requests and follow-ups in threads."""
-        if not self.queue_manager:
-            await self._handle_basic_discord_chat(message)
-            return
-        
-        try:
-            user_id = str(message.author.id)
-            thread_id = await self._get_or_create_thread(message, user_id)
+        user_id = str(message.author.id)
+        thread_id = await self._get_or_create_thread(message, user_id)
 
+        # UX is shared
+        if thread_id:
+            thread = self.get_channel(int(thread_id))
+            if thread:
+                await thread.send("I'm processing your request, please hold on...")
+
+        # 🔀 execution split
+        if self.queue_manager:
+            await self._handle_devrel_with_queue(message, triage_result, thread_id)
+        else:
+            await self._handle_devrel_direct(message, triage_result, thread_id)
+
+    async def _handle_devrel_direct(self,message, triage_result, thread_id):
+        try:
+            response = await self._basic_discord_response(message.content)
+
+            if thread_id:
+                thread = self.get_channel(int(thread_id))
+                if thread:
+                    await thread.send(response)
+            else:
+                await message.channel.send(response)
+
+        except Exception:
+            logger.exception("Basic Discord-only chat failed")
+            thread = self.get_channel(int(thread_id))
+            await thread.send("Sorry, I ran into an issue answering that."
+            )
+    
+    async def _handle_devrel_with_queue(self, message, triage_result, thread_id):
+        try:
+            from app.core.orchestration.queue_manager import QueuePriority
+            
+            user_id = str(message.author.id)
+            
             agent_message = {
                 "type": "devrel_request",
                 "id": f"discord_{message.id}",
@@ -141,13 +145,6 @@ class DiscordBot(commands.Bot):
             priority = priority_map.get(triage_result.get("priority"), QueuePriority.MEDIUM)
             await self.queue_manager.enqueue(agent_message, priority)
 
-            # --- "PROCESSING" MESSAGE RESTORED ---
-            if thread_id:
-                thread = self.get_channel(int(thread_id))
-                if thread:
-                    await thread.send("I'm processing your request, please hold on...")
-            # ------------------------------------
-
         except Exception as e:
             logger.error(f"Error handling DevRel message: {str(e)}")
 
@@ -171,7 +168,22 @@ class DiscordBot(commands.Bot):
         except Exception as e:
             logger.error(f"Failed to create thread: {e}")
         return str(message.channel.id)
+    
+    async def _basic_discord_response(self, content: str) -> str:
+        """
+        Stateless Discord-only reply.
+        No memory, no queue, no agent.
+        """
+        from app.llm.chat import chat_completion
 
+        return await chat_completion(
+            content,
+            context={
+                "platform": "discord",
+                "mode": "discord_only",
+            },
+        )
+    
     async def _handle_agent_response(self, response_data: Dict[str, Any]):
         try:
             thread_id = response_data.get("thread_id")
