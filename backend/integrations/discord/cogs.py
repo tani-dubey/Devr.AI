@@ -110,11 +110,16 @@ class DevRelCommands(commands.Cog):
         if self.queue:
             from app.core.orchestration.queue_manager import QueuePriority
             await self.queue.enqueue(cleanup, QueuePriority.HIGH)
-
-        await interaction.response.send_message(
+            await interaction.response.send_message(
             "Your DevRel thread has been reset!",
             ephemeral=True,
         )
+        else:
+            await interaction.response.send_message(
+                "Your DevRel thread has been cleared locally. "
+                "(Full memory reset unavailable in current mode.)",
+                ephemeral=True,
+            )
 
     @app_commands.command(name="help", description="Show DevRel assistant help.")
     async def help_devrel(self, interaction: discord.Interaction):
@@ -280,7 +285,7 @@ class DevRelCommands(commands.Cog):
     async def index_repository(self, interaction: discord.Interaction, repository: str):
         """Index a GitHub repository into FalkorDB code graph"""
         if not settings.code_intelligence_enabled:
-            logger.info("Idexing blocked: FalkorDB not configured")
+            logger.info("Indexing blocked: FalkorDB not configured")
             await falkor_unavailable(interaction)
             return 
         
