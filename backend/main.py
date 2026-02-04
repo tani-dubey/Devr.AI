@@ -38,11 +38,13 @@ class DevRAIApplication:
             from integrations.discord.bot import DiscordBot
             from discord.ext import commands
             self.discord_bot = DiscordBot(queue_manager=None)
+            self.queue_manager = None
         
         if settings.code_intelligence_enabled:
             from app.core.orchestration.queue_manager import AsyncQueueManager
             from app.database.weaviate.client import get_weaviate_client
             from app.core.orchestration.agent_coordinator import AgentCoordinator
+            self.weaviate_client = get_weaviate_client()
             
             self.queue_manager = AsyncQueueManager()
             self.discord_bot= DiscordBot(self.queue_manager)
@@ -95,6 +97,7 @@ class DevRAIApplication:
             logger.info("Weaviate Is for Full Mode")
             return 
         try:
+            from app.database.weaviate.client import get_weaviate_client
             async with get_weaviate_client() as client:
                 if await client.is_ready():
                     logger.info("Weaviate connection successful and ready")

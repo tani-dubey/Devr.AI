@@ -57,7 +57,7 @@ class Settings(BaseSettings):
         """
         GitHub verification + OAuth.
         """
-        return self.discord_enabled and all([
+        return self.discord_enabled and bool(self.backend_url) and all([
             self.github_token,
             self.supabase_url,
             self.supabase_key,

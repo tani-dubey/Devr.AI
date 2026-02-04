@@ -24,7 +24,11 @@ async def send_github_unavailable(interaction: discord.Interaction):
         ),
         color=discord.Color.red(),
     )
-    await interaction.followup.send(embed=embed, ephemeral=True)
+    if interaction.response.is_done():
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    else:
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        
 async def falkor_unavailable(interaction: discord.Interaction):
     embed = discord.Embed(
         title="❌ Code Intelligence Unavailable",
@@ -37,8 +41,7 @@ async def falkor_unavailable(interaction: discord.Interaction):
         ),
         color=discord.Color.red(),
     )
-
-    # Safe send (works whether deferred or not)
+    # Safe send
     if interaction.response.is_done():
         await interaction.followup.send(embed=embed, ephemeral=True)
     else:
@@ -418,7 +421,7 @@ class DevRelCommands(commands.Cog):
     @app_commands.describe(repository="Repository name (owner/repo)")
     async def delete_index(self, interaction: discord.Interaction, repository: str):
         """Delete a repository index"""
-        if not settings.code_intelligence_enabled():
+        if not settings.code_intelligence_enabled:
             logger.info("Deletion of index blocked: FalkorDB not configured")
             await falkor_unavailable(interaction)
             return 

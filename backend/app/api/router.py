@@ -9,9 +9,7 @@ core_router.include_router(
     tags=["Health"]
 )
 
-# -------- Auth router (OPTIONAL) --------
-auth_router= APIRouter()
-
+# -------- Auth router --------
 def get_auth_router() -> APIRouter:
     router= APIRouter()
     from .v1.auth import router as auth_router
@@ -30,4 +28,4 @@ def get_auth_router() -> APIRouter:
     
     return router
 
-__all__ = ["core_router", "auth_router"]
+__all__ = ["core_router", "get_auth_router"]

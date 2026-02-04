@@ -108,8 +108,18 @@ class DiscordBot(commands.Bot):
             else:
                 await message.channel.send(response)
 
-        except Exception:
+        except Exception as e:
             logger.exception("Basic Discord-only chat failed")
+             # Fall back to original channel if thread unavailable
+            try:
+                if thread_id:
+                    thread = self.get_channel(int("thread_id"))
+                    if thread:
+                        await thread.send("Sorry, I ran into an issue answering that.")
+                        return
+                await message.channel.send("Sorry, I ran into an issue answering that.")
+            except Exception:
+                logger.exception("Failed to send error message")
             thread = self.get_channel(int(thread_id))
             await thread.send("Sorry, I ran into an issue answering that."
             )
