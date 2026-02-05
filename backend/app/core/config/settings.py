@@ -66,9 +66,10 @@ class Settings(BaseSettings):
     @property
     def code_intelligence_enabled(self) -> bool:
         """
-        FalkorDB / GraphRAG / indexing.
+        Runs DevrAI in full mode.
         """
         return self.github_enabled and all([
+            self.rabbitmq_url,
             os.getenv("FALKORDB_HOST"),
             os.getenv("FALKORDB_PORT"),
             os.getenv("CODEGRAPH_BACKEND_URL"),
