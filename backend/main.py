@@ -31,6 +31,7 @@ class DevRAIApplication:
         """Initializes all services required by the application."""
         self.weaviate_client = None
         self.discord_bot = None
+        self._discord_task = None
         self.agent_coordinator = None
         
         # Discord always exists if enabled
@@ -51,7 +52,10 @@ class DevRAIApplication:
             self.agent_coordinator = AgentCoordinator(self.queue_manager)
 
     async def start_background_tasks(self):
-        """Starts the background."""
+        """
+        Start all enabled background services including the Discord bot,
+        queue workers, and code intelligence dependencies.
+        """
         try:
             # Discord Mode
             if settings.discord_enabled:
@@ -62,7 +66,7 @@ class DevRAIApplication:
                 # 2. Discord
                 try:
                         await self.discord_bot.load_extension("integrations.discord.cogs")
-                        asyncio.create_task(
+                        self._discord_task = asyncio.create_task(
                             self.discord_bot.start(settings.discord_bot_token)
                         )
                 except Exception as e:
@@ -76,7 +80,6 @@ class DevRAIApplication:
                     await self.test_weaviate_connection()
                 except Exception as e:
                     logger.warning("Weaviate disabled: %s", e)
-                    self.weaviate_enabled = False
 
                         
             logger.info(
