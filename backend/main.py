@@ -109,7 +109,7 @@ class DevRAIApplication:
         """Stops all background tasks and connections gracefully."""
         logger.info("Stopping background tasks and closing connections...")
         try:
-            if settings.discord_enabled and not self.discord_bot.is_closed():
+            if settings.discord_enabled and self.discord_bot and not self.discord_bot.is_closed():
                 await self.discord_bot.close()
                 logger.info("Discord bot has been closed.")
         except Exception as e:
