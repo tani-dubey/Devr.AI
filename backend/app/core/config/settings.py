@@ -73,7 +73,7 @@ class Settings(BaseSettings):
             os.getenv("FALKORDB_HOST"),
             os.getenv("FALKORDB_PORT"),
             os.getenv("CODEGRAPH_BACKEND_URL"),
-            os.getenv("CODEGRAPH_SECRET_TOKEN"),
+            os.getenv("SECRET_TOKEN"),
         ])
 
 
